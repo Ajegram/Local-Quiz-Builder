@@ -87,6 +87,10 @@ D. 7x
 
 You can also add multiple questions in the same file, and each question block is parsed separately.
 
+## Sample question bank
+
+Try the ready-to-import [sample logic reviewer](./samples/logic-reviewer.md): import it with **Browse Files**, or open the file and paste its contents into the manual Markdown box. It includes examples of topics, answers, explanations, and optional additional details.
+
 ## Important notes
 
 - The exported reviewer is fully self-contained; it does not require a backend.
@@ -141,4 +145,4 @@ You can copy the generated Markdown directly into the app’s manual paste box o
 
 ## License
 
-This project is intended for local learning and personal study use.
+This project is licensed under the [MIT License](./LICENSE).
