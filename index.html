@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logic Reviewer Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Offline Quiz Builder</p>
+          <h1>Logic Reviewer Generator</h1>
+        </div>
+        <p class="subtitle">Convert Markdown question banks into interactive offline reviewers.</p>
+      </header>
+
+      <main class="workspace">
+        <section class="panel import-panel">
+          <div class="panel-header">
+            <h2>Import Question Bank</h2>
+          </div>
+
+          <div class="dropzone" id="dropZone" tabindex="0">
+            <input type="file" id="markdownInput" accept=".md,.markdown,text/markdown" multiple hidden />
+            <div class="dropzone-content">
+              <div class="dropzone-icon">⬆</div>
+              <p>Drag &amp; drop Markdown files here</p>
+              <button type="button" class="secondary-button" id="browseFilesBtn">Browse Files</button>
+            </div>
+          </div>
+
+          <div class="manual-import">
+            <label for="markdownTextarea">Paste Markdown manually</label>
+            <textarea id="markdownTextarea" rows="8" placeholder="Paste one or more Markdown questions here..."></textarea>
+          </div>
+
+          <div class="imported-files-wrap">
+            <div class="inline-row">
+              <h3>Imported files</h3>
+              <button type="button" class="ghost-button" id="clearFilesBtn">Clear</button>
+            </div>
+            <ul id="importedFilesList" class="file-list"></ul>
+          </div>
+        </section>
+
+        <section class="panel ai-prompt-panel">
+          <div class="panel-header with-actions">
+            <div>
+              <h2>Generate Questions with AI</h2>
+              <p class="panel-description">Copy this prompt into an AI chat, fill in the subject and topics, then paste its Markdown response into the import box above.</p>
+            </div>
+            <button type="button" id="copyAiPromptBtn" class="secondary-button">Copy prompt</button>
+          </div>
+          <label for="aiPromptText" class="sr-only">Prompt for an AI chat</label>
+          <textarea id="aiPromptText" rows="16" readonly spellcheck="false">Create a Markdown question bank for a quiz reviewer.
+
+Subject/course: [ENTER SUBJECT OR COURSE]
+Grade or difficulty level: [ENTER LEVEL]
+Topics to cover: [ENTER TOPICS]
+Number of questions: [ENTER NUMBER]
+
+Write clear, accurate questions appropriate for the specified level. Organize questions under topic headings. Return only the Markdown question bank, with no introduction, conclusion, or code fences.
+
+Use this exact format for every question:
+
+# [Reviewer title]
+
+## Topic: [Topic name]
+
+### Question
+[Question text]
+A. [Answer choice]
+B. [Answer choice]
+C. [Answer choice]
+D. [Answer choice]
+**Answer:** [Correct letter or letters]
+**Explanation:** [Brief explanation on one line]
+**Additional details:** [Optional extra context to reveal after the question]
+
+---
+
+Make sure each answer letter matches its choice exactly. Include four plausible choices for multiple-choice questions, exactly one correct answer unless the question is explicitly marked as multiple-answer, and do not include an Additional details line when there is no useful extra context.</textarea>
+          <p id="aiPromptCopyStatus" class="copy-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="panel info-panel">
+          <div class="panel-header">
+            <h2>Reviewer Information</h2>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              <span>Reviewer title</span>
+              <input id="reviewerTitle" type="text" placeholder="CPE107-4 Quiz 3 Reviewer" />
+            </label>
+
+            <label>
+              <span>Course name</span>
+              <input id="courseName" type="text" placeholder="Logic Circuits and Design" />
+            </label>
+
+            <label>
+              <span>Subtitle</span>
+              <input id="reviewerSubtitle" type="text" placeholder="Short reviewer subtitle" />
+            </label>
+
+            <label class="full-width">
+              <span>Description</span>
+              <textarea id="reviewerDescription" rows="3" placeholder="Brief description of the review session"></textarea>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button type="button" id="parseBtn" class="primary-button">Parse Questions</button>
+          </div>
+        </section>
+
+        <section class="panel summary-panel">
+          <div class="panel-header">
+            <h2>Parsing Summary</h2>
+          </div>
+          <div id="summaryStats" class="stats-grid">
+            <div class="stat-box">
+              <span class="label">Questions detected</span>
+              <strong id="summaryQuestions">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">Single answer</span>
+              <strong id="summarySingle">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">Multiple answer</span>
+              <strong id="summaryMultiple">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">True/False</span>
+              <strong id="summaryTrueFalse">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">Topics</span>
+              <strong id="summaryTopics">0</strong>
+            </div>
+            <div class="stat-box">
+              <span class="label">Warnings</span>
+              <strong id="summaryWarnings">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel controls-panel">
+          <div class="panel-header with-actions">
+            <h2>Search and Filter</h2>
+            <button type="button" id="addQuestionBtn" class="secondary-button">Add Question</button>
+          </div>
+
+          <div class="filter-grid">
+            <label>
+              <span>Search</span>
+              <input id="searchInput" type="text" placeholder="Search question text or topic" />
+            </label>
+
+            <label>
+              <span>Topic</span>
+              <select id="topicFilter"></select>
+            </label>
+
+            <label>
+              <span>Type</span>
+              <select id="typeFilter">
+                <option value="all">All</option>
+                <option value="single">Single</option>
+                <option value="multiple">Multiple</option>
+                <option value="truefalse">True/False</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Warnings / Errors</span>
+              <select id="issueFilter">
+                <option value="all">All</option>
+                <option value="warning">Warnings</option>
+                <option value="error">Errors</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="button-row compact">
+            <button type="button" id="validateBtn" class="secondary-button">Validate Question Bank</button>
+          </div>
+        </section>
+
+        <section class="panel editor-panel">
+          <div class="panel-header">
+            <h2>Question Preview / Editor</h2>
+          </div>
+          <div id="questionEditor" class="question-editor"></div>
+        </section>
+
+        <section class="panel options-panel">
+          <div class="panel-header">
+            <h2>Export Options</h2>
+          </div>
+
+          <div class="option-grid">
+            <label class="toggle-row">
+              <span>Shuffle questions</span>
+              <input id="shuffleQuestions" type="checkbox" />
+            </label>
+
+            <label class="toggle-row">
+              <span>Shuffle answer choices</span>
+              <input id="shuffleChoices" type="checkbox" />
+            </label>
+
+            <label class="toggle-row">
+              <span>Show explanations after answering</span>
+              <input id="showExplanations" type="checkbox" checked />
+            </label>
+
+            <label class="toggle-row">
+              <span>Allow previous question navigation</span>
+              <input id="allowPrevious" type="checkbox" checked />
+            </label>
+
+            <label class="toggle-row">
+              <span>Save progress with localStorage</span>
+              <input id="saveProgress" type="checkbox" checked />
+            </label>
+
+            <label class="toggle-row">
+              <span>Show topic tags</span>
+              <input id="showTopics" type="checkbox" checked />
+            </label>
+
+            <label class="toggle-row">
+              <span>Export as one-by-one flashcard mode</span>
+              <input id="flashcardMode" type="checkbox" />
+            </label>
+
+            <label class="toggle-row">
+              <span>Reveal additional details after question</span>
+              <input id="showAdditionalDetails" type="checkbox" checked />
+            </label>
+
+            <label>
+              <span>Theme</span>
+              <select id="themeSelect">
+                <option value="dark-blue">Dark Blue</option>
+                <option value="dark-purple">Dark Purple</option>
+                <option value="light">Light</option>
+                <option value="custom">Custom Accent</option>
+              </select>
+            </label>
+
+            <label id="customAccentWrap" class="hidden">
+              <span>Custom accent color</span>
+              <input id="customAccent" type="color" value="#4f8cff" />
+            </label>
+          </div>
+
+          <div class="action-buttons">
+            <button type="button" id="exportJsonBtn" class="secondary-button">Export Question Bank JSON</button>
+            <button type="button" id="importJsonBtn" class="secondary-button">Import Question Bank JSON</button>
+            <input type="file" id="jsonImportInput" accept="application/json,.json" hidden />
+          </div>
+
+          <div class="button-row generate-row">
+            <button type="button" id="generateBtn" class="primary-button">Generate Reviewer HTML</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
