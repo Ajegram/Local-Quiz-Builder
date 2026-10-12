@@ -230,7 +230,7 @@ function bindEvents() {
     }
 
     const validation = validateQuestionBank();
-    const hasErrors = validation.summary.errors > 0;
+    const hasErrors = validation.errors > 0;
     if (hasErrors) {
       alert('The question bank contains errors. Fix them before exporting the reviewer.');
       renderEditor();
@@ -240,7 +240,7 @@ function bindEvents() {
 
     const html = generateReviewerHTML();
     const safeTitle = sanitizeFilename(state.reviewer.title || DEFAULT_REVIEWER.title);
-    downloadText(html, safeTitle + '.html');
+    downloadText(html, safeTitle + '.html', 'text/html;charset=utf-8');
   });
 
   document.addEventListener('click', handleQuestionEditorClick);
@@ -1482,8 +1482,8 @@ function sanitizeFilename(value) {
   return cleaned;
 }
 
-function downloadText(content, fileName) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+function downloadText(content, fileName, contentType) {
+  const blob = new Blob([content], { type: contentType || 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
